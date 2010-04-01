@@ -1,0 +1,38 @@
+<?php
+return array(
+    'session_ns'=>'mysess',
+    
+    'roles'=>array(
+        'guest',
+        'user',
+        'admin'
+    ),
+    'resources'=>array(
+        'welcome'=>array(
+            'actions'=>array(
+                'index'=>array()
+            ),
+            'access'=>array(
+                'allow'=>array(),
+                'deny'=>array(),
+            )
+        ),
+        'sign'=>array(
+            'actions'=>array(
+                'index'=>array(
+                    'allow'=>'guest'
+                ),
+                'in'=>array(
+                    'allow'=>'guest'
+                ),
+                'out'=>array(
+                    'allow'=>'user|admin'
+                )
+            ),
+            'access'=>array(
+                'allow'=>array(),
+                'deny'=>array(),
+            )
+        ),
+    )
+);
