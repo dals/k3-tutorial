@@ -8,7 +8,7 @@ define('IN_PRODUCTION', false);
  * @see  http://docs.kohanaphp.com/features/localization#time
  * @see  http://php.net/timezones
  */
-date_default_timezone_set('America/Chicago');
+date_default_timezone_set('Europe/Kiev');
 
 /**
  * Enable the Kohana auto-loader.
@@ -16,6 +16,28 @@ date_default_timezone_set('America/Chicago');
  * @see  http://docs.kohanaphp.com/features/autoloading
  * @see  http://php.net/spl_autoload_register
  */
+
+/**
+ * Custom Project classes loader
+ */
+class Project_Loader{
+    public static function auto_load($class)
+    {
+        if(stristr($class, 'Project')) {
+            $file = str_replace('_', '/', strtolower($class));
+            $path = MODPATH.$file.EXT;
+            if (is_readable($path))
+            {
+                    require $path;
+                    return TRUE;
+            }
+            // Class is not in the filesystem
+            return FALSE;
+        }
+    }
+}
+
+spl_autoload_register(array('Project_Loader', 'auto_load'));
 spl_autoload_register(array('Kohana', 'auto_load'));
 
 //-- Configuration and initialization -----------------------------------------
@@ -33,7 +55,7 @@ spl_autoload_register(array('Kohana', 'auto_load'));
  * - boolean  profile     enable or disable internal profiling               TRUE
  * - boolean  caching     enable or disable internal caching                 FALSE
  */
-Kohana::init(array('base_url' => '/'));
+Kohana::init(array('base_url' => '/', 'index_file'=>''));
 
 /**
  * Attach the file write to logging. Multiple writers are supported.
@@ -50,6 +72,7 @@ Kohana::$config->attach(new Kohana_Config_File);
  */
 Kohana::modules(array(
 	// 'auth'       => MODPATH.'auth',       // Basic authentication
+	 'authlite'       => MODPATH.'authlite',       // Basic authentication
         // 'xhtml'       => MODPATH.'xhtml',
 	// 'codebench'  => MODPATH.'codebench',  // Benchmarking tool
 	 'database'   => MODPATH.'database',   // Database access
@@ -73,10 +96,6 @@ Route::set('default', '(<controller>(/<action>(/<id>)))')
  * Execute the main request. A source of the URI can be passed, eg: $_SERVER['PATH_INFO'].
  * If no source is specified, the URI will be automatically detected.
  */
-
-if(Session::instance()->get('user_role') == null) {
-    Session::instance()->set('user_role', 'guest');
-}
 
 $request = Request::instance();
 

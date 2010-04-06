@@ -1,9 +1,13 @@
 <?php
-class Controller_Base extends Controller_Template {
+class Project_Controller_Base extends Controller_Template {
     public $template = 'templates/default/main';
 
     public $data = array();
     public $view = null;
+
+    public $authlite;
+    public $user;
+
     /**
      * The before() method is called before your controller action.
      * In our template controller we override this method so that we can
@@ -11,10 +15,25 @@ class Controller_Base extends Controller_Template {
      * controllers if they need to be modified.
      */
     public function before() {
-        parent::before();
+        // Authlite instance
+        $this->authlite = Authlite::instance();
+        $conf = Kohana::config('authlite');
+        // login check
+        if ( ! $this->authlite->logged_in() && Request::instance()->action != 'login') {
+                $conf = $conf->resource;
+                $this->request->redirect($conf['controller']);
 
-        $acl = Kohana::config('acl');
-        
+        } else {
+
+                // assigns the user object
+                $this->user = $this->authlite->get_user();
+
+                if ($this->authlite->logged_in() && Request::instance()->action == 'login') {
+                        $this->request->redirect('');
+                }
+        }
+
+        parent::before();
 
         if ($this->auto_render) {
             $config = Kohana::config('site')->load('site');
