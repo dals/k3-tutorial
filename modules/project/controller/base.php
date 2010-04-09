@@ -18,19 +18,17 @@ class Project_Controller_Base extends Controller_Template {
         // Authlite instance
         $this->authlite = Authlite::instance();
         $conf = Kohana::config('authlite');
+        $conf = $conf->resource;
         // login check
-        if ( ! $this->authlite->logged_in() && Request::instance()->action != 'login') {
-                $conf = $conf->resource;
-                $this->request->redirect($conf['controller']);
-
+        if ( ! $this->authlite->logged_in() && Request::instance()->controller != $conf['controller']) {
+            $this->request->redirect($conf['controller']);
         } else {
+            // assigns the user object
+            $this->user = $this->authlite->get_user();
 
-                // assigns the user object
-                $this->user = $this->authlite->get_user();
-
-                if ($this->authlite->logged_in() && Request::instance()->action == 'login') {
-                        $this->request->redirect('');
-                }
+            if ($this->authlite->logged_in() && Request::instance()->controller == $conf['controller']) {
+                $this->request->redirect('');
+            }
         }
 
         parent::before();

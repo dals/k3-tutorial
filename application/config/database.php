@@ -18,10 +18,10 @@ return array
 			 * string   database
 			 */
 			'hostname'   => 'localhost',
-			'username'   => FALSE,
-			'password'   => FALSE,
+			'username'   => 'root',
+			'password'   => '123321',
 			'persistent' => FALSE,
-			'database'   => 'kohana',
+			'database'   => 'exkrydals',
 		),
 		'table_prefix' => '',
 		'charset'      => 'utf8',

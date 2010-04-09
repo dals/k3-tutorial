@@ -13,7 +13,7 @@ return array
 	/**
 	 * User model
 	 */
-	'user_model' => 'user',
+	'user_model' => 'auth_user',
 	
 	/**
 	 * Username column

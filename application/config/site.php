@@ -6,6 +6,6 @@ return array(
                 'layout'=>'main',
         ),
         'site'=> array(
-                'title' => 'Exkrydals',
+                'title' => 'KO3',
         )
 );
