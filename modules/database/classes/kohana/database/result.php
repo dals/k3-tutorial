@@ -2,12 +2,13 @@
 /**
  * Database result wrapper.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query/Result
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
-abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIterator, ArrayAccess {
+abstract class Kohana_Database_Result implements Countable, Iterator,SeekableIterator, ArrayAccess {
 
 	// Executed SQL for this result
 	protected $_query;
@@ -37,6 +38,12 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 		// Store the SQL locally
 		$this->_query = $sql;
 
+		if (is_object($as_object))
+		{
+			// Get the object class name
+			$as_object = get_class($as_object);
+		}
+
 		// Results as objects or associative arrays
 		$this->_as_object = $as_object;
 	}
@@ -49,52 +56,82 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	/**
 	 * Return all of the rows in the result as an array.
 	 *
-	 * @param   string  column for an associative keys
-	 * @param   string  column for an associative values
+	 * @param   string  column for associative keys
+	 * @param   string  column for values
 	 * @return  array
 	 */
 	public function as_array($key = NULL, $value = NULL)
 	{
-		// Go back to beginning of result set
-		$this->rewind();
-
 		$results = array();
 
-		foreach ($this as $row)
+		if ($key === NULL AND $value === NULL)
 		{
-			if ($key !== NULL)
-			{		
-				if ($value !== NULL)
+			// Indexed rows
+
+			foreach ($this as $row)
+			{
+				$results[] = $row;
+			}
+		}
+		elseif ($key === NULL)
+		{
+			// Indexed columns
+
+			if ($this->_as_object)
+			{
+				foreach ($this as $row)
 				{
-					// $key => $value list
-					if ($this->_as_object)
-					{
-						$results[$row->$key] = $row->$value;
-					}
-					else
-					{
-						$results[$row[$key]] = $row[$value];
-					}
-				}
-				else
-				{
-					// $key => $row list 
-					if ($this->_as_object)
-					{
-						$results[$row->$key] = $row;
-					}
-					else
-					{
-						$results[$row[$key]] = $row;
-					}	
+					$results[] = $row->$value;
 				}
 			}
 			else
 			{
-				// Add each row to the array
-				$results[] = $row;
+				foreach ($this as $row)
+				{
+					$results[] = $row[$value];
+				}
 			}
 		}
+		elseif ($value === NULL)
+		{
+			// Associative rows
+
+			if ($this->_as_object)
+			{
+				foreach ($this as $row)
+				{
+					$results[$row->$key] = $row;
+				}
+			}
+			else
+			{
+				foreach ($this as $row)
+				{
+					$results[$row[$key]] = $row;
+				}
+			}
+		}
+		else
+		{
+			// Associative columns
+
+			if ($this->_as_object)
+			{
+				foreach ($this as $row)
+				{
+					$results[$row->$key] = $row->$value;
+				}
+			}
+			else
+			{
+				foreach ($this as $row)
+				{
+					$results[$row[$key]] = $row[$value];
+				}
+			}
+		}
+
+		$this->rewind();
 
 		return $results;
 	}
@@ -109,19 +146,19 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	public function get($name, $default = NULL)
 	{
 		$row = $this->current();
-		
-		if ($this->_as_object AND isset($row->$name))
+
+		if ($this->_as_object)
 		{
-			return $row->$name;
-		}
-		elseif ( ! $this->_as_object AND isset($row[$name]))
-		{
-			return $row[$name];
+			if (isset($row->$name))
+				return $row->$name;
 		}
 		else
 		{
-			return $default;
+			if (isset($row[$name]))
+				return $row[$name];
 		}
+
+		return $default;
 	}
 
 	/**
@@ -137,17 +174,9 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	 */
 	public function offsetExists($offset)
 	{
-		if ($this->_total_rows > 0)
-		{
-			$min = 0;
-			$max = $this->_total_rows - 1;
-
-			return ! ($offset < $min OR $offset > $max);
-		}
-
-		return FALSE;
+		return ($offset >= 0 AND $offset < $this->_total_rows);
 	}
-	
+
 	/**
 	 * ArrayAccess: offsetGet
 	 */
@@ -155,7 +184,7 @@ abstract class Kohana_Database_Result implements Countable, Iterator, SeekableIt
 	{
 		if ( ! $this->seek($offset))
 			return NULL;
-			
+
 		return $this->current();
 	}
 

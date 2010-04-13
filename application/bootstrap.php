@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 define('IN_PRODUCTION', false);
+ini_set('error_reporting', E_ALL  & ~E_NOTICE);
 //-- Environment setup --------------------------------------------------------
 
 /**
@@ -73,7 +74,7 @@ Kohana::$config->attach(new Kohana_Config_File);
 Kohana::modules(array(
 	// 'auth'       => MODPATH.'auth',       // Basic authentication
 	 'authlite'       => MODPATH.'authlite',       // Basic authentication
-        // 'xhtml'       => MODPATH.'xhtml',
+         'jelly'       => MODPATH.'jelly',
 	// 'codebench'  => MODPATH.'codebench',  // Benchmarking tool
 	 'database'   => MODPATH.'database',   // Database access
 	// 'image'      => MODPATH.'image',      // Image manipulation

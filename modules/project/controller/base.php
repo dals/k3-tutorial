@@ -5,6 +5,8 @@ class Project_Controller_Base extends Controller_Template {
     public $data = array();
     public $view = null;
 
+    public $auto_render = TRUE;
+    
     public $authlite;
     public $user;
 
@@ -26,7 +28,9 @@ class Project_Controller_Base extends Controller_Template {
             // assigns the user object
             $this->user = $this->authlite->get_user();
 
-            if ($this->authlite->logged_in() && Request::instance()->controller == $conf['controller']) {
+            if ($this->authlite->logged_in() 
+                    && Request::instance()->controller == $conf['controller']
+                    && Request::instance()->action !== $conf['logout']) {
                 $this->request->redirect('');
             }
         }
@@ -56,8 +60,9 @@ class Project_Controller_Base extends Controller_Template {
     public function after() {
         if ($this->auto_render) {
             $styles = array(
-                    'static/css/grid.css' => 'screen',
                     'static/css/ui/base.css' => 'screen',
+                    'static/css/grid.css' => 'screen',
+                    'static/css/layout.css' => 'screen',
             );
 
             $scripts = array(
@@ -77,9 +82,70 @@ class Project_Controller_Base extends Controller_Template {
                 $this->view->$key = $value;
             }
         }
+
+        $this->template->aSystemMessages = $this->getSystemMessages();
+
         $this->template->content = $this->view;
 
         parent::after();
+    }
+
+
+    /**
+     * 
+     * 
+     * SYSTEM METHODS
+     * 
+     * 
+     */
+
+
+    /**
+     * Redirect (shorthand)
+     * 
+     * @param <type> $url
+     * @param <type> $code
+     * @return <type>
+     */
+    public static function redirect($url, $code  = 302){
+        return Request::instance()->redirect($url, $code);
+    }
+
+
+    /**
+     *
+     * @param <type> $message
+     * @param <type> $type
+     * @return <type>
+     */
+    public function setSystemMessage($message, $type = 'error') {
+        $messages = array('error'=>array(), 'success'=>array());
+        
+        $session = Session::instance();
+
+        $stored = $session->get('system_messages');
+        if(!empty($stored)) {
+            $messages = array_merge_recursive($messages, $stored);
+        }
+        
+        array_push($messages[$type], $message);
+
+        $session->set('system_messages', $messages);
+        return $this;
+    }
+
+    /**
+     *
+     * @param <type> $cleanup
+     * @return <type> 
+     */
+    public function getSystemMessages($cleanup = true) {
+        $session = Session::instance();
+        $messages = $session->get('system_messages');
+        if($cleanup) {
+            $session->delete('system_messages');
+        }
+        return $messages;
     }
 
 }

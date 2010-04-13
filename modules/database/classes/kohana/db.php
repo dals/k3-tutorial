@@ -2,10 +2,11 @@
 /**
  * Database object creation helper methods.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 class Kohana_DB {
 
@@ -31,6 +32,17 @@ class Kohana_DB {
 	public static function select($columns = NULL)
 	{
 		return new Database_Query_Builder_Select(func_get_args());
+	}
+
+	/**
+	 * Create a new SELECT builder from an array of columns
+	 *
+	 * @param   array   columns to select
+	 * @return  Database_Query_Builder_Select
+	 */
+	public static function select_array(array $columns = NULL)
+	{
+		return new Database_Query_Builder_Select($columns);
 	}
 
 	/**

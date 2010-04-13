@@ -2,10 +2,11 @@
 /**
  * Database query builder for JOIN statements.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 class Kohana_Database_Query_Builder_Join extends Database_Query_Builder {
 
@@ -84,18 +85,7 @@ class Kohana_Database_Query_Builder_Join extends Database_Query_Builder {
 		}
 
 		// Concat the conditions "... AND ..."
-		$conditions = implode(' AND ', $conditions);
-
-		if (count($this->_on) > 1)
-		{
-			// Wrap the conditions in a group. Some databases (Postgre) will fail
-			// when singular conditions are grouped like this.
-			$sql .= '('.$conditions.')';
-		}
-		else
-		{
-			$sql .= $conditions;
-		}
+		$sql .= '('.implode(' AND ', $conditions).')';
 
 		return $sql;
 	}

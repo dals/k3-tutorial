@@ -2,10 +2,11 @@
 /**
  * Database query builder for SELECT statements.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where {
 
@@ -26,12 +27,6 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 
 	// HAVING ...
 	protected $_having = array();
-
-	// ORDER BY ...
-	protected $_order_by = array();
-
-	// LIMIT ...
-	protected $_limit = NULL;
 
 	// OFFSET ...
 	protected $_offset = NULL;
@@ -81,6 +76,19 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 	{
 		$columns = func_get_args();
 
+		$this->_select = array_merge($this->_select, $columns);
+
+		return $this;
+	}
+
+	/**
+	 * Choose the columns to select from, using an array.
+	 *
+	 * @param   array  list of column names or aliases
+	 * @return  $this
+	 */
+	public function select_array(array $columns)
+	{
 		$this->_select = array_merge($this->_select, $columns);
 
 		return $this;
@@ -259,33 +267,6 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 	}
 
 	/**
-	 * Applies sorting with "ORDER BY ..."
-	 *
-	 * @param   mixed   column name or array($column, $alias) or object
-	 * @param   string  direction of sorting
-	 * @return  $this
-	 */
-	public function order_by($column, $direction = NULL)
-	{
-		$this->_order_by[] = array($column, $direction);
-
-		return $this;
-	}
-
-	/**
-	 * Return up to "LIMIT ..." results
-	 *
-	 * @param   integer  maximum results to return
-	 * @return  $this
-	 */
-	public function limit($number)
-	{
-		$this->_limit = (int) $number;
-
-		return $this;
-	}
-
-	/**
 	 * Start returning results after "OFFSET ..."
 	 *
 	 * @param   integer   starting result number
@@ -309,6 +290,9 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		// Callback to quote identifiers
 		$quote_ident = array($db, 'quote_identifier');
 
+		// Callback to quote tables
+		$quote_table = array($db, 'quote_table');
+
 		// Start a selection query
 		$query = 'SELECT ';
 
@@ -326,25 +310,25 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		else
 		{
 			// Select all columns
-			$query .= implode(', ', array_map($quote_ident, $this->_select));
+			$query .= implode(', ', array_unique(array_map($quote_ident, $this->_select)));
 		}
 
 		if ( ! empty($this->_from))
 		{
 			// Set tables to select from
-			$query .= ' FROM '.implode(', ', array_map(array($db, 'quote_table'), $this->_from));
+			$query .= ' FROM '.implode(', ', array_unique(array_map($quote_table, $this->_from)));
 		}
 
 		if ( ! empty($this->_join))
 		{
 			// Add tables to join
-			$query .= ' '.Database_Query_Builder::compile_join($db, $this->_join);
+			$query .= ' '.$this->_compile_join($db, $this->_join);
 		}
 
 		if ( ! empty($this->_where))
 		{
 			// Add selection conditions
-			$query .= ' WHERE '.Database_Query_Builder::compile_conditions($db, $this->_where);
+			$query .= ' WHERE '.$this->_compile_conditions($db, $this->_where);
 		}
 
 		if ( ! empty($this->_group_by))
@@ -356,13 +340,13 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		if ( ! empty($this->_having))
 		{
 			// Add filtering conditions
-			$query .= ' HAVING '.Database_Query_Builder::compile_conditions($db, $this->_having);
+			$query .= ' HAVING '.$this->_compile_conditions($db, $this->_having);
 		}
 
 		if ( ! empty($this->_order_by))
 		{
 			// Add sorting
-			$query .= ' '.Database_Query_Builder::compile_order_by($db, $this->_order_by);
+			$query .= ' '.$this->_compile_order_by($db, $this->_order_by);
 		}
 
 		if ($this->_limit !== NULL)
@@ -395,6 +379,8 @@ class Kohana_Database_Query_Builder_Select extends Database_Query_Builder_Where 
 		$this->_limit     =
 		$this->_offset    =
 		$this->_last_join = NULL;
+
+		$this->_parameters = array();
 
 		return $this;
 	}

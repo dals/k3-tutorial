@@ -2,23 +2,16 @@
 /**
  * Cached database result.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query/Result
  * @author     Kohana Team
  * @copyright  (c) 2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 class Kohana_Database_Result_Cached extends Database_Result {
 
 	public function __construct(array $result, $sql, $as_object = NULL)
 	{
-		if (count($result) > 0)
-		{
-			// Determine if we stored as objects or associative arrays	
-			$as_object = get_class($result[0]);
-		}
-		
-		// If there are no results, we don't care how they're returned
-
 		parent::__construct($result, $sql, $as_object);
 
 		// Find the number of rows in the result

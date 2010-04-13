@@ -2,10 +2,11 @@
 /**
  * Database query builder for INSERT statements.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 class Kohana_Database_Query_Builder_Insert extends Database_Query_Builder {
 
@@ -96,14 +97,14 @@ class Kohana_Database_Query_Builder_Insert extends Database_Query_Builder {
 	 */
 	public function select(Database_Query $query)
 	{
-		if ($select->type() !== Database::SELECT)
+		if ($query->type() !== Database::SELECT)
 		{
 			throw new Kohana_Exception('Only SELECT queries can be combined with INSERT queries');
 		}
 
-		$this->_values = $select;
+		$this->_values = $query;
 
-		return $select;
+		return $this;
 	}
 
 	/**
@@ -128,6 +129,15 @@ class Kohana_Database_Query_Builder_Insert extends Database_Query_Builder {
 			$groups = array();
 			foreach ($this->_values as $group)
 			{
+				foreach ($group as $i => $value)
+				{
+					if (is_string($value) AND isset($this->_parameters[$value]))
+					{
+						// Use the parameter value
+						$group[$i] = $this->_parameters[$value];
+					}
+				}
+
 				$groups[] = '('.implode(', ', array_map($quote, $group)).')';
 			}
 
@@ -149,6 +159,8 @@ class Kohana_Database_Query_Builder_Insert extends Database_Query_Builder {
 
 		$this->_columns =
 		$this->_values  = array();
+
+		$this->_parameters = array();
 
 		return $this;
 	}

@@ -1209,6 +1209,9 @@ class Kohana_Core {
 	 */
 	public static function debug_source($file, $line_number, $padding = 5)
 	{
+                if(!is_readable($file)) {
+                    return false;
+                }
 		// Open the file and set the line position
 		$file = fopen($file, 'r');
 		$line = 0;

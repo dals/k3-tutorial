@@ -2,10 +2,11 @@
 /**
  * Database query builder.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Query
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 abstract class Kohana_Database_Query_Builder extends Database_Query {
 
@@ -16,7 +17,7 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 	 * @param   array   join statements
 	 * @return  string
 	 */
-	public static function compile_join(Database $db, array $joins)
+	protected function _compile_join(Database $db, array $joins)
 	{
 		$statements = array();
 
@@ -37,7 +38,7 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 	 * @param   array   condition statements
 	 * @return  string
 	 */
-	public static function compile_conditions(Database $db, array $conditions)
+	protected function _compile_conditions(Database $db, array $conditions)
 	{
 		$last_condition = NULL;
 
@@ -72,8 +73,43 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 					// Split the condition
 					list($column, $op, $value) = $condition;
 
+					// Database operators are always uppercase
+					$op = strtoupper($op);
+
+					if ($op === 'BETWEEN' AND is_array($value))
+					{
+						// BETWEEN always has exactly two arguments
+						list($min, $max) = $value;
+
+						if (is_string($min) AND isset($this->_parameters[$min]))
+						{
+							// Set the parameter as the minimum
+							$min = $this->_parameters[$min];
+						}
+
+						if (is_string($max) AND isset($this->_parameters[$max]))
+						{
+							// Set the parameter as the maximum
+							$max = $this->_parameters[$max];
+						}
+
+						// Quote the min and max value
+						$value = $db->quote($min).' AND '.$db->quote($max);
+					}
+					else
+					{
+						if (is_string($value) AND isset($this->_parameters[$value]))
+						{
+							// Set the parameter as the value
+							$value = $this->_parameters[$value];
+						}
+
+						// Quote the entire value normally
+						$value = $db->quote($value);
+					}
+
 					// Append the statement to the query
-					$sql .= $db->quote_identifier($column).' '.strtoupper($op).' '.$db->quote($value);
+					$sql .= $db->quote_identifier($column).' '.$op.' '.$value;
 				}
 
 				$last_condition = $condition;
@@ -84,13 +120,43 @@ abstract class Kohana_Database_Query_Builder extends Database_Query {
 	}
 
 	/**
+	 * Compiles an array of set values into an SQL partial. Used for UPDATE.
+	 *
+	 * @param   object  Database instance
+	 * @param   array   updated values
+	 * @return  string
+	 */
+	protected function _compile_set(Database $db, array $values)
+	{
+		$set = array();
+		foreach ($values as $group)
+		{
+			// Split the set
+			list ($column, $value) = $group;
+
+			// Quote the column name
+			$column = $db->quote_identifier($column);
+
+			if (is_string($value) AND isset($this->_parameters[$value]))
+			{
+				// Use the parameter value
+				$value = $this->_parameters[$value];
+			}
+
+			$set[$column] = $column.' = '.$db->quote($value);
+		}
+
+		return implode(', ', $set);
+	}
+
+	/**
 	 * Compiles an array of ORDER BY statements into an SQL partial.
 	 *
 	 * @param   object  Database instance
 	 * @param   array   sorting columns
 	 * @return  string
 	 */
-	public static function compile_order_by(Database $db, array $columns)
+	protected function _compile_order_by(Database $db, array $columns)
 	{
 		$sort = array();
 		foreach ($columns as $group)

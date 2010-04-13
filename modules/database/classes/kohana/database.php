@@ -2,10 +2,11 @@
 /**
  * Database connection wrapper.
  *
- * @package    Database
+ * @package    Kohana/Database
+ * @category   Base
  * @author     Kohana Team
  * @copyright  (c) 2008-2009 Kohana Team
- * @license    http://kohanaphp.com/license.html
+ * @license    http://kohanaphp.com/license
  */
 abstract class Kohana_Database {
 
@@ -146,6 +147,49 @@ abstract class Kohana_Database {
 	abstract public function query($type, $sql, $as_object);
 
 	/**
+	 * Count the number of records in the last query, without LIMIT or OFFSET applied.
+	 *
+	 * @return  integer
+	 */
+	public function count_last_query()
+	{
+		if ($sql = $this->last_query)
+		{
+			$sql = trim($sql);
+			if (stripos($sql, 'SELECT') !== 0)
+			{
+				return FALSE;
+			}
+
+			if (stripos($sql, 'LIMIT') !== FALSE)
+			{
+				// Remove LIMIT from the SQL
+				$sql = preg_replace('/\sLIMIT\s+[^a-z]+/i', ' ', $sql);
+			}
+
+			if (stripos($sql, 'OFFSET') !== FALSE)
+			{
+				// Remove OFFSET from the SQL
+				$sql = preg_replace('/\sOFFSET\s+\d+/i', '', $sql);
+			}
+
+			// Get the total rows from the last query executed
+			$result = $this->query
+			(
+				Database::SELECT,
+				'SELECT COUNT(*) AS '.$this->quote_identifier('total_rows').' '.
+				'FROM ('.$sql.') AS '.$this->quote_table('counted_results'),
+				TRUE
+			);
+
+			// Return the total number of rows from the query
+			return (int) $result->current()->total_rows;
+		}
+
+		return FALSE;
+	}
+
+	/**
 	 * Count the number of records in a table.
 	 *
 	 * @param   mixed    table name string or array(query, alias)
@@ -158,6 +202,74 @@ abstract class Kohana_Database {
 
 		return $this->query(Database::SELECT, 'SELECT COUNT(*) AS total_row_count FROM '.$table, FALSE)
 			->get('total_row_count');
+	}
+
+	/**
+	 * Returns a normalized array describing the SQL data type
+	 *
+	 * @param   string  SQL data type
+	 * @return  array
+	 */
+	public function datatype($type)
+	{
+		static $types = array
+		(
+			// SQL-92
+			'bit'                           => array('type' => 'string', 'exact' => TRUE),
+			'bit varying'                   => array('type' => 'string'),
+			'char'                          => array('type' => 'string', 'exact' => TRUE),
+			'char varying'                  => array('type' => 'string'),
+			'character'                     => array('type' => 'string', 'exact' => TRUE),
+			'character varying'             => array('type' => 'string'),
+			'date'                          => array('type' => 'string'),
+			'dec'                           => array('type' => 'float', 'exact' => TRUE),
+			'decimal'                       => array('type' => 'float', 'exact' => TRUE),
+			'double precision'              => array('type' => 'float'),
+			'float'                         => array('type' => 'float'),
+			'int'                           => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
+			'integer'                       => array('type' => 'int', 'min' => '-2147483648', 'max' => '2147483647'),
+			'interval'                      => array('type' => 'string'),
+			'national char'                 => array('type' => 'string', 'exact' => TRUE),
+			'national char varying'         => array('type' => 'string'),
+			'national character'            => array('type' => 'string', 'exact' => TRUE),
+			'national character varying'    => array('type' => 'string'),
+			'nchar'                         => array('type' => 'string', 'exact' => TRUE),
+			'nchar varying'                 => array('type' => 'string'),
+			'numeric'                       => array('type' => 'float', 'exact' => TRUE),
+			'real'                          => array('type' => 'float'),
+			'smallint'                      => array('type' => 'int', 'min' => '-32768', 'max' => '32767'),
+			'time'                          => array('type' => 'string'),
+			'time with time zone'           => array('type' => 'string'),
+			'timestamp'                     => array('type' => 'string'),
+			'timestamp with time zone'      => array('type' => 'string'),
+			'varchar'                       => array('type' => 'string'),
+
+			// SQL:1999
+			'binary large object'               => array('type' => 'string', 'binary' => TRUE),
+			'blob'                              => array('type' => 'string', 'binary' => TRUE),
+			'boolean'                           => array('type' => 'bool'),
+			'char large object'                 => array('type' => 'string'),
+			'character large object'            => array('type' => 'string'),
+			'clob'                              => array('type' => 'string'),
+			'national character large object'   => array('type' => 'string'),
+			'nchar large object'                => array('type' => 'string'),
+			'nclob'                             => array('type' => 'string'),
+			'time without time zone'            => array('type' => 'string'),
+			'timestamp without time zone'       => array('type' => 'string'),
+
+			// SQL:2003
+			'bigint'    => array('type' => 'int', 'min' => '-9223372036854775808', 'max' => '9223372036854775807'),
+
+			// SQL:2008
+			'binary'            => array('type' => 'string', 'binary' => TRUE, 'exact' => TRUE),
+			'binary varying'    => array('type' => 'string', 'binary' => TRUE),
+			'varbinary'         => array('type' => 'string', 'binary' => TRUE),
+		);
+
+		if (isset($types[$type]))
+			return $types[$type];
+
+		return array();
 	}
 
 	/**
@@ -178,6 +290,32 @@ abstract class Kohana_Database {
 	 * @return  array
 	 */
 	abstract public function list_columns($table, $like = NULL);
+
+	/**
+	 * Extracts the text between parentheses, if any
+	 *
+	 * @param   string
+	 * @return  array   list containing the type and length, if any
+	 */
+	protected function _parse_type($type)
+	{
+		if (($open = strpos($type, '(')) === FALSE)
+		{
+			// No length specified
+			return array($type, NULL);
+		}
+
+		// Closing parenthesis
+		$close = strpos($type, ')', $open);
+
+		// Length without parentheses
+		$length = substr($type, $open + 1, $close - 1 - $open);
+
+		// Type without the length
+		$type = substr($type, 0, $open).substr($type, $close + 1);
+
+		return array($type, $length);
+	}
 
 	/**
 	 * Return the table prefix.
@@ -201,9 +339,13 @@ abstract class Kohana_Database {
 		{
 			return 'NULL';
 		}
-		elseif ($value === TRUE OR $value === FALSE)
+		elseif ($value === TRUE)
 		{
-			return $value ? 'TRUE' : 'FALSE';
+			return "'1'";
+		}
+		elseif ($value === FALSE)
+		{
+			return "'0'";
 		}
 		elseif (is_object($value))
 		{
@@ -231,6 +373,11 @@ abstract class Kohana_Database {
 		{
 			return (int) $value;
 		}
+		elseif (is_float($value))
+		{
+			// Convert to non-locale aware float to prevent possible commas
+			return sprintf('%F', $value);
+		}
 
 		return $this->escape($value);
 	}
@@ -238,17 +385,28 @@ abstract class Kohana_Database {
 	/**
 	 * Quote a database table name and adds the table prefix if needed
 	 *
-	 * @param   mixed   table name
+	 * @param   mixed   table name or array(table, alias)
 	 * @return  string
 	 */
-	public function quote_table($table)
+	public function quote_table($value)
 	{
-		if (strpos($table, '.') === FALSE)
+		// Assign the table by reference from the value
+		if (is_array($value))
 		{
+			$table =& $value[0];
+		}
+		else
+		{
+			$table =& $value;
+		}
+
+		if (is_string($table) AND strpos($table, '.') === FALSE)
+		{
+			// Add the table prefix for tables
 			$table = $this->table_prefix().$table;
 		}
 
-		return $this->quote_identifier($table);
+		return $this->quote_identifier($value);
 	}
 
 	/**

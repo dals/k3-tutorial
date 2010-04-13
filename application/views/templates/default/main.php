@@ -5,8 +5,10 @@
         <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 
         <?php foreach ($styles as $file => $type) echo HTML::style($file, array('media' => $type)), "\n" ?>
-        <?php foreach ($scripts as $file) echo HTML::script($file), "\n" ?>
 
+        <link rel="stylesheet" href="/static/css/form.css" type="text/css" />
+        <?php foreach ($scripts as $file) echo HTML::script($file), "\n" ?>
+        
     </head>
     <body>
         <div class="container_16">
@@ -15,18 +17,50 @@
             </div>
             <div class="clear"></div>
 
-            <div id="navigation" class="grid_16">
-                <ul>
-                    <li>text</li>
-                    <li>text</li>
-                    <li>text</li>
-                    <li>text</li>
+            <div class="grid_16">
+                <ul id="navigation_top">
+                    <li>
+                        <a href="#" class="active">text</a>
+                    </li>
+                    <li>
+                        <a href="#">text</a>
+                    </li>
+                    <li>
+                        <a href="#">text</a>
+                    </li>
+                    <li>
+                        <a href="#">text</a>
+                    </li>
                 </ul>
             </div>
             <div class="clear"></div>
-            
+            <?php
+            if(!empty ($aSystemMessages)):
+            ?>
+                <div id="cSystemMessages" class="grid_16">
+                    <ul id="cSystemMessagesTop">
+                    <?php
+                    foreach ($aSystemMessages as $type => $aMesssages):
+                        if(!empty($aMesssages)):
+                            foreach ($aMesssages as $message):
+                    ?>
+                        <li class="<?=$type;?>"><?=$message;?></li>
+                    <?php
+                            endforeach;
+                        endif;
+                    endforeach;
+                    ?>
+                    </ul>
+                </div>
+                <div class="clear"></div>
+            <?php
+            endif;
+            ?>
+
             <div id="content" class="grid_16">
-                <?php echo $content ?>
+                <?php
+                    echo $content;
+                ?>
             </div>
             <div class="clear"></div>
 
@@ -34,5 +68,12 @@
                 <p>&copy;2009 Fuck yall!</p>
             </div>
         </div>
+        <script type="text/javascript">
+            $(function(){
+                if($('#cSystemMessages').length && $('#cSystemMessages').is(':visible')) {
+                    $('#cSystemMessages').delay(5000).slideUp('slow');
+                }
+            })
+        </script>
     </body>
 </html>

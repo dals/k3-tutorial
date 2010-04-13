@@ -1,0 +1,70 @@
+/* 
+    Document   : layout
+    Created on : Apr 10, 2010, 1:49:53 AM
+    Author     : Dmitry Seredinov <dmitry.seredinov at gmail.com>
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+/* 
+   TODO customize this sample style
+   Syntax recommendation http://www.w3.org/TR/REC-CSS2/
+*/
+
+body{
+    background-color: #FFFEEF;
+}
+
+/*
+NAVIGATION
+*/
+
+#navigation_top {
+    width: 100%;
+    float: left;
+    font-size: small; /* could be specified at a higher level */
+    margin: 0;
+    padding: 0 10px 0 0;
+    border-bottom: 1px solid #333;
+}
+
+#navigation_top li {
+    float: left;
+    margin: 0;
+    padding: 0;
+    display: inline;
+    list-style: none;
+}
+
+#navigation_top a:link, #navigation_top a:visited {
+    float: left;
+    font-size: 85%;
+    line-height: 20px;
+    font-weight: bold;
+    margin: 0 20px 0 0;
+    text-decoration: none;
+    color: #999;
+}
+
+#navigation_top a.active:link, #navigation_top a.active:visited, #navigation_top a:hover {
+    border-bottom: 4px solid #333;
+    padding-bottom: 2px;
+    color: #333;
+}
+
+/*
+SYSTEM MESSAGES
+*/
+#cSystemMessagesTop li.error {
+    color: red;
+}
+#cSystemMessagesTop li.success {
+    color: green;
+}
+
+/*
+CONTENT
+*/
+#content {
+    padding: 20px 0;
+}
